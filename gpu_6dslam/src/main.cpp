@@ -466,8 +466,10 @@ void callbackPointcloud2(const sensor_msgs::PointCloud2::ConstPtr& msg)
 
 		try
 		{
-			std::stringstream ss;
-		    ss << msg->header.stamp.sec;
+			// std::stringstream ss;
+      // ss << msg->header.stamp.sec;
+      char txt[10];
+      sprintf(txt,"%08d", msg->header.seq);
 		    ////////////////
 
 		   /* visualization_msgs::Marker text;
@@ -493,7 +495,8 @@ void callbackPointcloud2(const sensor_msgs::PointCloud2::ConstPtr& msg)
 
 		    /////////////////
 		    ros::spinOnce();*/
-			slam->registerSingleScan(pc, m, ss.str());
+      // slam->registerSingleScan(pc, m, ss.str());
+			slam->registerSingleScan(pc, m, txt);
 
 
 			/////////////////////

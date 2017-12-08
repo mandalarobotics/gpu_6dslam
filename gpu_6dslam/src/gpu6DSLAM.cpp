@@ -14,7 +14,7 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 
 	// std::cout << "gpu6DSLAM::registerSingleScan" << std::endl;
 
-	std::string scanName = std::string("scan_") + iso_time_str;
+  std::string scanName = std::string("scan_") + iso_time_str;
 	std::string scanPCDFileName = scanName + std::string(".pcd");
 
 	boost::filesystem::path tfModelFileName = mainPath;
