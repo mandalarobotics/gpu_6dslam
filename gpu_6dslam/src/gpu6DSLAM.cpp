@@ -14,7 +14,7 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 
 	// std::cout << "gpu6DSLAM::registerSingleScan" << std::endl;
 
-  std::string scanName = std::string("scan_") + iso_time_str;
+	std::string scanName = std::string("scan_") + iso_time_str;
 	std::string scanPCDFileName = scanName + std::string(".pcd");
 
 	boost::filesystem::path tfModelFileName = mainPath;
@@ -43,17 +43,35 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 		std::cout << "ERROR: problem with saving file: " << rawDataFileName << std::endl;
 	}
 
+	//cut off
+	pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB> pctemp;
+	pctemp.reserve(pc.size());
+
+	for (size_t i =0; i<pc.size(); i++ )
+	{
+		if ((pc[i].z < 15 && pc[i].z >-1)&&(pc[i].x*pc[i].x+pc[i].y*pc[i].y > 1.5))
+		{
+			pctemp.push_back(pc[i]);
+		}
+	}
+	pc = pctemp;
+
+
 	//pc processing
 	//noise removal
+	ROS_DEBUG("Starting cudaWrapper.removeNoiseNaive, pc.size : %d", pc.size());
 	cudaWrapper.removeNoiseNaive(pc,
 			this->noise_removal_resolution,
 			this->noise_removal_bounding_box_extension,
 			this->noise_removal_number_of_points_in_bucket_threshold);
 
 	//downsampling
+
+	ROS_DEBUG("Starting cudaWrapper.downsampling, pc.size : %d", pc.size());
 	cudaWrapper.downsampling(pc, this->downsampling_resolution, this->downsampling_resolution);
 
 	//semantic classification
+	ROS_DEBUG("Starting cudaWrapper.classify, pc.size : %d", pc.size());
 	cudaWrapper.classify( pc,
 			this->semantic_classification_normal_vectors_search_radius,
 			this->semantic_classification_curvature_threshold,
@@ -68,6 +86,7 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 
 	//save processed data
 	// std::cout << "processed scan: " << processedDataFileName << " will be saved in: " << processedDataFileName << std::endl;
+	ROS_DEBUG("Starting pcl::io::savePCDFileBinary, pc.size : %d", pc.size());
 	if(pcl::io::savePCDFileBinary(processedDataFileName.string(), pc) == -1)
 	{
 		std::cout << "ERROR: problem with saving file: " << processedDataFileName << std::endl;
@@ -136,32 +155,32 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 		 */
 
 		// std::cout << "registerLastArrivedScan START" << std::endl;
-
+		ROS_DEBUG("Starting registerLastArrivedScan - step 1");
 		for(int i = 0 ; i < this->slam_registerLastArrivedScan_number_of_iterations_step1; i++)
 		{
 			registerLastArrivedScan(cudaWrapper, this->slam_search_radius_step1, this->slam_bucket_size_step1);
 		}
-
+		ROS_DEBUG("Starting registerLastArrivedScan - step 2");
 		for(int i = 0 ; i < this->slam_registerLastArrivedScan_number_of_iterations_step2; i++)
 		{
 			registerLastArrivedScan(cudaWrapper, this->slam_search_radius_step2, this->slam_bucket_size_step2);
 		}
-
+		ROS_DEBUG("Starting registerLastArrivedScan - step 3");
 		for(int i = 0 ; i < this->slam_registerLastArrivedScan_number_of_iterations_step3; i++)
 		{
 			registerLastArrivedScan(cudaWrapper, this->slam_search_radius_step3, this->slam_bucket_size_step3);
 		}
-
+		ROS_DEBUG("Starting slam_registerAll - step 1");
 		for(int i = 0 ; i < this->slam_registerAll_number_of_iterations_step1; i++)
 		{
 			registerAll(cudaWrapper, this->slam_search_radius_step1, this->slam_bucket_size_step1, 3);
 		}
-
+		ROS_DEBUG("Starting slam_registerAll - step 2");
 		for(int i = 0 ; i < this->slam_registerAll_number_of_iterations_step2; i++)
 		{
 			registerAll(cudaWrapper, this->slam_search_radius_step2, this->slam_bucket_size_step2, 3);
 		}
-
+		ROS_DEBUG("Starting slam_registerAll - step 3");
 		for(int i = 0 ; i < this->slam_registerAll_number_of_iterations_step3; i++)
 		{
 			registerAll(cudaWrapper, this->slam_search_radius_step3, this->slam_bucket_size_step3, 3);
@@ -174,6 +193,7 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 			transformPointCloud(pc_before_local, this->vmregistered[i]);
 			pc_after += pc_before_local;
 		}
+		ROS_DEBUG("Done");
 		// pcl::io::savePCDFileBinary(std::string("/tmp/pc_after_")+iso_time_str + std::string(".pcd"), pc_after);
 
 
