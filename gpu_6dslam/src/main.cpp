@@ -10,7 +10,8 @@
 #include "gpu6DSLAM.h"
 
 #include <visualization_msgs/Marker.h>
-
+#include <unistd.h>
+#include <stdio.h>
 tf::TransformListener* tf_listener;
 ros::Subscriber subscriber_pointcloud2;
 ros::Publisher publisher_metascan;
@@ -222,7 +223,7 @@ int main(int argc, char *argv[])
 	ros::NodeHandle private_node("~");
 	ros::NodeHandle public_node("");
 
-	tf_listener = new tf::TransformListener();
+	tf_listener = new tf::TransformListener(ros::Duration(60));
 
 	////////////////////////////////////////////////////////////////////////
 	ROS_INFO("reading parameters");
@@ -251,8 +252,15 @@ int main(int argc, char *argv[])
 	//ss.str()
 
 	//slam->registerSingleScan(pc, m, ss.str());
+
+	std::string root_folder_name_lastest = 	root_folder_name+"_last";
 	root_folder_name+=ss.str();
 
+	int err = 0;
+	err = remove(root_folder_name_lastest.c_str());
+	if (err) ROS_FATAL("Cannot execute remove(%s), return : %d", root_folder_name_lastest.c_str(), err);
+	symlink((root_folder_name+"/").c_str(), root_folder_name_lastest.c_str());
+	if (err) ROS_FATAL("Cannot execute symlink(%s, %s), return : %d", (root_folder_name+"/").c_str(), root_folder_name_lastest.c_str(), err);
 	ROS_INFO("param root_folder_name: '%s'", root_folder_name.c_str());
 
 	//gpu6DSLAM *;//(root_folder_name);

@@ -127,7 +127,7 @@ add_definitions(${PCL_DEFINITIONS})
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES scan_matching_cuda_fkie
-  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs tf nav_msgs message_runtime
+  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs tf nav_msgs message_runtime gpu_6dslam_msgs
   DEPENDS Boost PCL
 )
 
@@ -171,7 +171,7 @@ cuda_add_executable(gpu_6dslam_node
 #add_executable(pointcloud_to_scanpose src/pointcloud_to_scanpose.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-#add_dependencies(scan_matching_cuda_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} scan_matching_cuda_fkie_gencpp)
+add_dependencies(gpu_6dslam_node gpu_6dslam_msgs_gencpp)
 
 
 
