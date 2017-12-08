@@ -141,6 +141,17 @@ public:
 			}
 		}
 
+		boost::filesystem::path photosData = mainPath;
+		photosData/=("photos");
+		std::cout <<"creating directory (if does not exist):" << photosData << std::endl;
+		if(!boost::filesystem::create_directories(photosData))
+		{
+			if(!boost::filesystem::is_directory(photosData))
+			{
+				std::cout<<"Could not create dir: "<< photosData << std::endl;
+			}
+		}
+
 		this->tfModel.setAlgorithmName("localisation from tf");
 		this->tfModel.setDataSetPath("rawData");
 
