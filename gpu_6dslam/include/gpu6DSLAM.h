@@ -101,7 +101,7 @@ public:
 	float viewpointX;
 	float viewpointY;
 	float viewpointZ;
-
+	bool use4DOF;
 	int cudaDevice;
 
 	gpu6DSLAM(){};
@@ -221,7 +221,7 @@ public:
 		this->viewpointX = 0.0f;
 		this->viewpointY = 0.0f;
 		this->viewpointZ = 2.0f;
-
+		this->use4DOF = true;
 		this->cudaDevice = 0;
 
 	};

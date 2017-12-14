@@ -402,8 +402,16 @@ void gpu6DSLAM::registerLastArrivedScan(CCudaWrapper &cudaWrapper, float slam_se
 			if(obs.vobs_nn.size() > this->slam_number_of_observations_threshold )
 			{
 			//std::cout << "obs.vobs_nn.size(): " << obs.vobs_nn.size() << std::endl;
-				//if(cudaWrapper.registerLS(obs))
-				if(cudaWrapper.registerLS_4DOF(obs))
+				bool done = false;
+				if (use4DOF)
+				{
+					done = cudaWrapper.registerLS_4DOF(obs);
+				}
+				else
+				{
+					done = cudaWrapper.registerLS(obs);
+				}
+				if(done)
 				{
 					Eigen::Vector3f omfika1_res(obs.om, obs.fi, obs.ka);
 					Eigen::Vector3f xyz1_res(obs.tx, obs.ty, obs.tz);
@@ -571,8 +579,17 @@ void gpu6DSLAM::registerAll(CCudaWrapper &cudaWrapper, float slam_search_radius,
 
 		if(obs.vobs_nn.size() > this->slam_number_of_observations_threshold )
 		{
-			//if(!cudaWrapper.registerLS(obs))
-			if(!cudaWrapper.registerLS_4DOF(obs))
+
+			bool done = false;
+			if (use4DOF)
+			{
+				done = cudaWrapper.registerLS_4DOF(obs);
+			}
+			else
+			{
+				done = cudaWrapper.registerLS(obs);
+			}
+			if(!done)
 			{
 				std::cout << "PROBLEM: cudaWrapper.registerLS(obs2to1)" << std::endl;
 				//do nothing
