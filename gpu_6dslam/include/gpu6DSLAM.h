@@ -42,7 +42,7 @@ public:
 	boost::filesystem::path mainPath;
 	boost::filesystem::path rawData;
 	boost::filesystem::path processedData;
-
+	bool use4DOF;
 	float noise_removal_resolution;
 	int noise_removal_number_of_points_in_bucket_threshold;
 	float noise_removal_bounding_box_extension;
@@ -107,6 +107,7 @@ public:
 	gpu6DSLAM(){};
 	gpu6DSLAM(std::string _root_folder_name)
 	{
+		this->use4DOF = true;
 		this->root_folder_name = _root_folder_name;
 
 		mainPath = this->root_folder_name;
