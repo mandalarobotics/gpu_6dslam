@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(gpu_6dslam)
 
+set(CMAKE_CXX_STANDARD 11)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -34,7 +36,9 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
 )
 
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_61,code=sm_61 -Xptxas -v")
+
+#set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_61,code=sm_61 -Xptxas -v")
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ;-gencode arch=compute_30,code=sm_30;-gencode arch=compute_61,code=sm_61 -Xptxas -v;--expt-extended-lambda;-std=c++11)
 
 include_directories(${PCL_INCLUDE_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -165,6 +169,8 @@ cuda_add_executable(gpu_6dslam_node
   src/gpu6DSLAM.cpp
   src/lesson_16.cu
   src/cuda_SVD.cu
+  src/fallback_allocator.cu
+  src/CudaException.cpp
 #src/data_model.cpp
   #src/viewerLog.cpp
 )

@@ -3,44 +3,44 @@
 
 CCudaWrapper::CCudaWrapper()
 {
-	this->d_point_cloud = 0;
-	this->d_hashTable = 0;
-	this->d_buckets = 0;
-	this->d_markers = 0;
-	this->d_mean = 0;
-	this->d_first_point_cloud = 0;
-	this->d_second_point_cloud = 0;
-	this->d_nearest_neighbour_indexes = 0;
-	this->d_A = 0;
-	this->d_P = 0;
-	this->d_l = 0;
-	this->d_obs_nn = 0;
+	//this->d_point_cloud = 0;
+	//this->d_hashTable = 0;
+	//this->d_buckets = 0;
+	//this->d_markers = 0;
+	//this->d_mean = 0;
+	//this->d_first_point_cloud = 0;
+	//this->d_second_point_cloud = 0;
+	//this->d_nearest_neighbour_indexes = 0;
+	//this->d_A = 0;
+	//this->d_P = 0;
+	//this->d_l = 0;
+	//this->d_obs_nn = 0;
 }
 
 CCudaWrapper::~CCudaWrapper()
 {
-	cudaFree(this->d_point_cloud); this->d_point_cloud = 0;
-	cudaFree(this->d_hashTable); this->d_hashTable = 0;
-	cudaFree(this->d_buckets); this->d_buckets = 0;
-	cudaFree(this->d_markers); this->d_markers = 0;
-	cudaFree(this->d_mean); this->d_mean = 0;
-	cudaFree(this->d_first_point_cloud); this->d_first_point_cloud = 0;
-	cudaFree(this->d_second_point_cloud); this->d_second_point_cloud = 0;
-	cudaFree(this->d_nearest_neighbour_indexes); this->d_nearest_neighbour_indexes = 0;
-	cudaFree(this->d_A); this->d_A = 0;
-	cudaFree(this->d_P); this->d_P = 0;
-	cudaFree(this->d_l); this->d_l = 0;
-	cudaFree(this->d_obs_nn); this->d_obs_nn = 0;
+	//cudaFree(this->d_point_cloud); this->d_point_cloud = 0;
+	//cudaFree(this->d_hashTable); this->d_hashTable = 0;
+	//cudaFree(this->d_buckets); this->d_buckets = 0;
+	//cudaFree(this->d_markers); this->d_markers = 0;
+	//cudaFree(this->d_mean); this->d_mean = 0;
+	//cudaFree(this->d_first_point_cloud); this->d_first_point_cloud = 0;
+	//cudaFree(this->d_second_point_cloud); this->d_second_point_cloud = 0;
+	//cudaFree(this->d_nearest_neighbour_indexes); this->d_nearest_neighbour_indexes = 0;
+	//cudaFree(this->d_A); this->d_A = 0;
+	//cudaFree(this->d_P); this->d_P = 0;
+	//cudaFree(this->d_l); this->d_l = 0;
+	//cudaFree(this->d_obs_nn); this->d_obs_nn = 0;
 }
 
 void CCudaWrapper::warmUpGPU(int cudaDevice)
 {
 	cudaError_t errCUDA = ::cudaSuccess;
 	errCUDA = cudaSetDevice(cudaDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		throw_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	errCUDA = cudaWarmUpGPU();
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		throw_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	getNumberOfAvailableThreads(cudaDevice, this->threads, this->threadsNV);//ToDo what if false
 
@@ -120,64 +120,94 @@ void CCudaWrapper::removeNoiseNaive(pcl::PointCloud<lidar_pointcloud::PointXYZIR
 	cudaError_t errCUDA = ::cudaSuccess;
 	gridParameters rgd_params;
 
-	bool* h_markers = 0;
+	//bool* h_markers = 0;
+	std::vector<char> h_markers;
 
-	errCUDA = cudaMalloc((void**)&this->d_point_cloud, point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//DataBuffer<bool, fallback_allocator> d_point_cloud;
 
-	errCUDA = cudaMemcpy(this->d_point_cloud, point_cloud.points.data(), point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaCalculateGridParams(this->d_point_cloud, point_cloud.points.size(),
+	//errCUDA = cudaMalloc((void**)&this->d_point_cloud, point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_point_cloud.init(point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_point_cloud, point_cloud.points.data(), point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_point_cloud.copyFromHostToDevice(reinterpret_cast<lidar_pointcloud::PointXYZIRNLRGB *>(point_cloud.points.data()), point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//d_vAggregatedOrigin.copyFromHostToDevice(reinterpret_cast<aggregatedOrigin_t *>
+	//				(vAggregatedOrigin.data()), vAggregatedOrigin.size());
+
+
+	errCUDA = cudaCalculateGridParams(this->d_point_cloud.data, point_cloud.points.size(),
 			resolution, resolution, resolution, bounding_box_extension, rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_hashTable, point_cloud.points.size()*sizeof(hashElement));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_hashTable, point_cloud.points.size()*sizeof(hashElement));
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_hashTable.init(point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaCalculateGrid(this->threads, this->d_point_cloud, this->d_buckets, this->d_hashTable, point_cloud.points.size(), rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_markers, point_cloud.points.size()*sizeof(bool) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_buckets.init(rgd_params.number_of_buckets);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaRemoveNoiseNaive(this->threads, this->d_markers, this->d_point_cloud, this->d_hashTable, this->d_buckets, rgd_params, point_cloud.points.size(), number_of_points_in_bucket_threshold);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	h_markers = (bool *)malloc(point_cloud.points.size()*sizeof(bool));
+	errCUDA = cudaCalculateGrid(this->threads, this->d_point_cloud.data, this->d_buckets.data, this->d_hashTable.data, point_cloud.points.size(), rgd_params);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(h_markers, this->d_markers, point_cloud.points.size()*sizeof(bool),cudaMemcpyDeviceToHost);
-		if(errCUDA != ::cudaSuccess)
-		{
-			free(h_markers);
-		}
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_markers.data, point_cloud.points.size()*sizeof(bool) );
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_markers.init(point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	errCUDA = cudaRemoveNoiseNaive(this->threads, this->d_markers.data, this->d_point_cloud.data, this->d_hashTable.data, this->d_buckets.data, rgd_params, point_cloud.points.size(), number_of_points_in_bucket_threshold);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	//h_markers = (bool *)malloc(point_cloud.points.size()*sizeof(bool));
+	h_markers.resize(point_cloud.points.size()); //= (bool *)malloc(point_cloud.points.size()*sizeof(bool));
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(h_markers.data(), this->d_markers.data, point_cloud.points.size()*sizeof(bool),cudaMemcpyDeviceToHost);
+	this->d_markers.copyFromDeviceToHost(h_markers.data());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+		//if(errCUDA != ::cudaSuccess)
+		//{
+		//	free(h_markers);
+		//}
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB> filtered_point_cloud;
 	for(size_t i = 0; i < point_cloud.points.size(); i++)
 	{
-		if(h_markers[i])filtered_point_cloud.push_back(point_cloud[i]);
+		if(h_markers[i] == 1)filtered_point_cloud.push_back(point_cloud[i]);
 	}
 
 	point_cloud = filtered_point_cloud;
 
-	free(h_markers);
+	//free(h_markers);
 
-	errCUDA = cudaFree(d_point_cloud); d_point_cloud = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(d_hashTable); d_hashTable = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(d_buckets); d_buckets = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(d_markers); d_markers = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
+	//errCUDA = cudaFree(d_point_cloud); d_point_cloud = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_point_cloud.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_hashTable); d_hashTable = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_hashTable.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_buckets); d_buckets = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_buckets.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_markers); d_markers = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_markers.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	return;
 }
 
@@ -186,17 +216,22 @@ void CCudaWrapper::downsampling(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRG
 	cudaError_t errCUDA = ::cudaSuccess;
 
 	gridParameters rgd_params;
-	bool* h_markers = 0;
+	std::vector<char> h_markers;
 
-	errCUDA = cudaMalloc((void**)&this->d_point_cloud, point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_point_cloud, point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_point_cloud.init(point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_point_cloud, point_cloud.points.data(), point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_point_cloud.copyFromHostToDevice(reinterpret_cast<lidar_pointcloud::PointXYZIRNLRGB *>(point_cloud.points.data()), point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_point_cloud, point_cloud.points.data(), point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaCalculateGridParams(this->d_point_cloud, point_cloud.points.size(),
+	errCUDA = cudaCalculateGridParams(this->d_point_cloud.data, point_cloud.points.size(),
 			resolution, resolution, resolution, bounding_box_extension, rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 		// std::cout << "regular grid parameters for normal vectors:" << std::endl;
 		// std::cout << "bounding_box_min_X: " << rgd_params.bounding_box_min_X << std::endl;
@@ -212,29 +247,38 @@ void CCudaWrapper::downsampling(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRG
 		// std::cout << "resolution_Y: " << rgd_params.resolution_Y << std::endl;
 		// std::cout << "resolution_Z: " << rgd_params.resolution_Z << std::endl;
 
-	errCUDA = cudaMalloc((void**)&this->d_hashTable,point_cloud.points.size()*sizeof(hashElement));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_hashTable,point_cloud.points.size()*sizeof(hashElement));
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_hashTable.init(point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_buckets.init(rgd_params.number_of_buckets);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaCalculateGrid(this->threads, this->d_point_cloud, this->d_buckets, this->d_hashTable, point_cloud.points.size(), rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	errCUDA = cudaCalculateGrid(this->threads, this->d_point_cloud.data, this->d_buckets.data, this->d_hashTable.data, point_cloud.points.size(), rgd_params);
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_markers, point_cloud.points.size()*sizeof(bool) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_markers, point_cloud.points.size()*sizeof(bool) );
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_markers.init(point_cloud.points.size());
 
-	errCUDA = cudaDownSample(this->threads, this->d_markers, this->d_hashTable, this->d_buckets, rgd_params, point_cloud.points.size());
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	errCUDA = cudaDownSample(this->threads, this->d_markers.data, this->d_hashTable.data, this->d_buckets.data, rgd_params, point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	h_markers = (bool *)malloc(point_cloud.points.size()*sizeof(bool));
+	h_markers.resize(point_cloud.points.size());// = (bool *)malloc(point_cloud.points.size()*sizeof(bool));
 
-	errCUDA = cudaMemcpy(h_markers, this->d_markers, point_cloud.points.size()*sizeof(bool),cudaMemcpyDeviceToHost);
-		if(errCUDA != ::cudaSuccess)
-		{
-			free(h_markers);
-		}
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(h_markers, this->d_markers, point_cloud.points.size()*sizeof(bool),cudaMemcpyDeviceToHost);
+	//	if(errCUDA != ::cudaSuccess)
+	//	{
+	//		free(h_markers);
+	//	}
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_markers.copyFromDeviceToHost(h_markers);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
 
 	pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB> downsampled_point_cloud;
 	for(size_t i = 0; i < point_cloud.points.size(); i++)
@@ -244,20 +288,26 @@ void CCudaWrapper::downsampling(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRG
 
 	point_cloud = downsampled_point_cloud;
 
-	free(h_markers);
+	//free(h_markers);
 
-	errCUDA = cudaFree(d_point_cloud); d_point_cloud = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_point_cloud); d_point_cloud = 0;
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_point_cloud.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_hashTable); d_hashTable = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_hashTable); d_hashTable = 0;
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_hashTable.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_buckets); d_buckets = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(d_markers); d_markers = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
+	//errCUDA = cudaFree(d_buckets); d_buckets = 0;
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_buckets.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_markers); d_markers = 0;
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_markers.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	return;
 }
 
@@ -276,35 +326,46 @@ void CCudaWrapper::classify(  pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB>
 	gridParameters rgd_params;
 	cudaError_t errCUDA = ::cudaSuccess;
 
-	errCUDA = cudaMalloc((void**)&this->d_point_cloud, point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_point_cloud, point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_point_cloud.init(point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_point_cloud, point_cloud.points.data(), point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_point_cloud.copyFromHostToDevice(reinterpret_cast<lidar_pointcloud::PointXYZIRNLRGB *>(point_cloud.points.data()), point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_point_cloud, point_cloud.points.data(), point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaCalculateGridParams(this->d_point_cloud, point_cloud.points.size(),
+	errCUDA = cudaCalculateGridParams(this->d_point_cloud.data, point_cloud.points.size(),
 			normal_vectors_search_radius, normal_vectors_search_radius, normal_vectors_search_radius, bounding_box_extension, rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_hashTable,point_cloud.points.size()*sizeof(hashElement));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_hashTable,point_cloud.points.size()*sizeof(hashElement));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_hashTable.init(point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_buckets.init(rgd_params.number_of_buckets);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaCalculateGrid(this->threadsNV, this->d_point_cloud, this->d_buckets, this->d_hashTable, point_cloud.points.size(), rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	errCUDA = cudaCalculateGrid(this->threadsNV, this->d_point_cloud.data, this->d_buckets.data, this->d_hashTable.data, point_cloud.points.size(), rgd_params);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_mean, point_cloud.points.size()*sizeof(simple_point3D) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_mean, point_cloud.points.size()*sizeof(simple_point3D) );
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_mean.init(point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 	errCUDA = cudaSemanticLabelingPlaneEdges(
 			this->threadsNV,
-			this->d_point_cloud,
+			this->d_point_cloud.data,
 			point_cloud.size(),
-			this->d_hashTable,
-			this->d_buckets,
-			this->d_mean,
+			this->d_hashTable.data,
+			this->d_buckets.data,
+			this->d_mean.data,
 			rgd_params,
 			normal_vectors_search_radius,
 			max_number_considered_in_INNER_bucket,
@@ -314,30 +375,42 @@ void CCudaWrapper::classify(  pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB>
 			viewpointX,
 			viewpointY,
 			viewpointZ);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	errCUDA = cudaSemanticLabelingFloorCeiling(
 			this->threads,
-			this->d_point_cloud,
+			this->d_point_cloud.data,
 			point_cloud.size(),
 			ground_Z_coordinate_threshold);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(point_cloud.points.data(), this->d_point_cloud, point_cloud.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyDeviceToHost);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(point_cloud.points.data(), this->d_point_cloud, point_cloud.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyDeviceToHost);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_point_cloud.copyFromDeviceToHost(point_cloud.points.data());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_point_cloud); d_point_cloud = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_hashTable); d_hashTable = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_buckets); d_buckets = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_point_cloud); d_point_cloud = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_point_cloud.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_mean); d_mean = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_hashTable); d_hashTable = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_hashTable.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_buckets); d_buckets = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_buckets.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_mean); d_mean = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
+	d_mean.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	return ;
 }
 
@@ -357,69 +430,91 @@ void CCudaWrapper::semanticNearestNeighbourhoodSearch(
 	cudaError_t errCUDA = ::cudaSuccess;
 
 
-	errCUDA = cudaMalloc((void**)&this->d_first_point_cloud, first_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_first_point_cloud, first_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_first_point_cloud.init(first_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_first_point_cloud, first_point_cloud.points.data(), first_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_first_point_cloud.copyFromHostToDevice(reinterpret_cast<lidar_pointcloud::PointXYZIRNLRGB *>(first_point_cloud.points.data()), first_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_second_point_cloud, second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_second_point_cloud.init(second_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_second_point_cloud, second_point_cloud.points.data(), second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_second_point_cloud.copyFromHostToDevice(reinterpret_cast<lidar_pointcloud::PointXYZIRNLRGB *>(second_point_cloud.points.data()), second_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_first_point_cloud, first_point_cloud.points.data(), first_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_second_point_cloud, second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaMemcpy(this->d_second_point_cloud, second_point_cloud.points.data(), second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaCalculateGridParams(this->d_first_point_cloud, first_point_cloud.points.size(),
+	errCUDA = cudaCalculateGridParams(this->d_first_point_cloud.data, first_point_cloud.points.size(),
 			bucket_size, bucket_size, bucket_size, bounding_box_extension, rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_hashTable, first_point_cloud.points.size()*sizeof(hashElement));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_hashTable, first_point_cloud.points.size()*sizeof(hashElement));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_hashTable.init(first_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_buckets.init(rgd_params.number_of_buckets);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_nearest_neighbour_indexes, second_point_cloud.points.size()*sizeof(int));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_nearest_neighbour_indexes, second_point_cloud.points.size()*sizeof(int));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_nearest_neighbour_indexes.init(second_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-
-	errCUDA = cudaCalculateGrid(this->threads, this->d_first_point_cloud, this->d_buckets, this->d_hashTable, first_point_cloud.points.size(), rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	errCUDA = cudaCalculateGrid(this->threads, this->d_first_point_cloud.data, this->d_buckets.data, this->d_hashTable.data, first_point_cloud.points.size(), rgd_params);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	errCUDA = cudaSemanticNearestNeighborSearch(
 			this->threads,
-			this->d_first_point_cloud,
+			this->d_first_point_cloud.data,
 			first_point_cloud.points.size(),
-			this->d_second_point_cloud,
+			this->d_second_point_cloud.data,
 			second_point_cloud.points.size(),
-			this->d_hashTable,
-			this->d_buckets,
+			this->d_hashTable.data,
+			this->d_buckets.data,
 			rgd_params,
 			search_radius,
 			max_number_considered_in_INNER_bucket,
 			max_number_considered_in_OUTER_bucket,
-			this->d_nearest_neighbour_indexes);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+			this->d_nearest_neighbour_indexes.data);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(nearest_neighbour_indexes.data(), this->d_nearest_neighbour_indexes, second_point_cloud.points.size()*sizeof(int),cudaMemcpyDeviceToHost);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(this->d_first_point_cloud); d_first_point_cloud = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(this->d_second_point_cloud); d_second_point_cloud = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(this->d_hashTable); d_hashTable = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(this->d_buckets); d_buckets = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(this->d_nearest_neighbour_indexes); d_nearest_neighbour_indexes = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(nearest_neighbour_indexes.data(), this->d_nearest_neighbour_indexes, second_point_cloud.points.size()*sizeof(int),cudaMemcpyDeviceToHost);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_nearest_neighbour_indexes.copyFromDeviceToHost(nearest_neighbour_indexes.data());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 
+	//errCUDA = cudaFree(this->d_first_point_cloud); d_first_point_cloud = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_first_point_cloud.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	//errCUDA = cudaFree(this->d_second_point_cloud); d_second_point_cloud = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_second_point_cloud.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_hashTable); d_hashTable = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_hashTable.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_buckets); d_buckets = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_buckets.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_nearest_neighbour_indexes); d_nearest_neighbour_indexes = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_nearest_neighbour_indexes.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	return;
 }
 
@@ -520,29 +615,45 @@ bool CCudaWrapper::registerLS(observations_t &obs)
 
 	double x[6];
 
-	errCUDA  = cudaMalloc((void**)&this->d_A,  obs.vobs_nn.size() * 3 * 6 *sizeof(double));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA  = cudaMalloc((void**)&this->d_A,  obs.vobs_nn.size() * 3 * 6 *sizeof(double));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA  = cudaMalloc((void**)&this->d_P,  obs.vobs_nn.size() * 3 *sizeof(double));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_A.init(obs.vobs_nn.size() * 3 * 6);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA  = cudaMalloc((void**)&this->d_P,  obs.vobs_nn.size() * 3 *sizeof(double));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_P.init(obs.vobs_nn.size() * 3);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA  = cudaMalloc((void**)&this->d_l,  obs.vobs_nn.size() * 3 *sizeof(double));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA  = cudaMalloc((void**)&this->d_l,  obs.vobs_nn.size() * 3 *sizeof(double));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_l.init(obs.vobs_nn.size() * 3);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_obs_nn, obs.vobs_nn.size()*sizeof(obs_nn_t) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_obs_nn, obs.vobs_nn.size()*sizeof(obs_nn_t) );
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_obs_nn.init(obs.vobs_nn.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_obs_nn, obs.vobs_nn.data(), obs.vobs_nn.size()*sizeof(obs_nn_t), cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_obs_nn, obs.vobs_nn.data(), obs.vobs_nn.size()*sizeof(obs_nn_t), cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA =  fill_A_l_cuda(threads, this->d_A, obs.tx, obs.ty, obs.tz, obs.om, obs.fi, obs.ka, d_obs_nn, obs.vobs_nn.size(),
-			this->d_P, this->d_l);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_obs_nn.copyFromHostToDevice(reinterpret_cast<obs_nn_t *>(obs.vobs_nn.data()), obs.vobs_nn.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	errCUDA =  fill_A_l_cuda(threads, this->d_A.data, obs.tx, obs.ty, obs.tz, obs.om, obs.fi, obs.ka, d_obs_nn.data, obs.vobs_nn.size(),
+			this->d_P.data, this->d_l.data);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	CCUDA_AX_B_SolverWrapper * wr = new CCUDA_AX_B_SolverWrapper(false, this->cuda_device);
 
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
 	CCUDA_AX_B_SolverWrapper::CCUDA_AX_B_SolverWrapper_error errAXB =
-					wr->Solve_ATPA_ATPl_x_data_on_GPU(this->threads, this->d_A, this->d_P, this->d_l, x, 6, obs.vobs_nn.size() * 3, solver_method);
+					wr->Solve_ATPA_ATPl_x_data_on_GPU(this->threads, this->d_A.data, this->d_P.data, this->d_l.data, x, 6, obs.vobs_nn.size() * 3, solver_method);
+
+
 	if(errAXB!=CCUDA_AX_B_SolverWrapper::success)
 	{
 		std::cout << "problem with solving Ax=B" << std::endl;
@@ -553,30 +664,39 @@ bool CCudaWrapper::registerLS(observations_t &obs)
 
 	delete wr;
 
-	errCUDA = cudaFree(d_obs_nn); d_obs_nn = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_obs_nn); d_obs_nn = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
+	d_obs_nn.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	// std::cout << "Ax=B solution:" << std::endl;
 	// for(int i = 0 ; i < 6; i++)
 	// {
 	// 	std::cout << "x[" << i <<"]: " << x[i] << std::endl;
 	// }
 
-	errCUDA = cudaFree(d_A); d_A = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_A); d_A = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_A.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_P); d_P = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_P); d_P = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_l); d_l = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_P.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	obs.tx += x[0];
-	obs.ty += x[1];
-	obs.tz += x[2];
-	obs.om += x[3];
-	obs.fi += x[4];
-	obs.ka += x[5];
+	//errCUDA = cudaFree(d_l); d_l = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_l.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	obs.tx += x[0]/2.0f;
+	obs.ty += x[1]/2.0f;
+	obs.tz += x[2]/2.0f;
+	obs.om += x[3]/2.0f;
+	obs.fi += x[4]/2.0f;
+	obs.ka += x[5]/2.0f;
 	return true;
 }
 
@@ -587,29 +707,41 @@ bool CCudaWrapper::registerLS_4DOF(observations_t &obs)
 
 	double x[4];
 
-	errCUDA  = cudaMalloc((void**)&this->d_A,  obs.vobs_nn.size() * 3 * 4 *sizeof(double));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA  = cudaMalloc((void**)&this->d_A,  obs.vobs_nn.size() * 3 * 4 *sizeof(double));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA  = cudaMalloc((void**)&this->d_P,  obs.vobs_nn.size() * 3 *sizeof(double));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_A.init(obs.vobs_nn.size() * 3 * 4);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA  = cudaMalloc((void**)&this->d_P,  obs.vobs_nn.size() * 3 *sizeof(double));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA  = cudaMalloc((void**)&this->d_l,  obs.vobs_nn.size() * 3 *sizeof(double));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_P.init(obs.vobs_nn.size() * 3);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA  = cudaMalloc((void**)&this->d_l,  obs.vobs_nn.size() * 3 *sizeof(double));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_l.init(obs.vobs_nn.size() * 3);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_obs_nn, obs.vobs_nn.size()*sizeof(obs_nn_t) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_obs_nn, obs.vobs_nn.size()*sizeof(obs_nn_t) );
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_obs_nn.init(obs.vobs_nn.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_obs_nn, obs.vobs_nn.data(), obs.vobs_nn.size()*sizeof(obs_nn_t), cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_obs_nn, obs.vobs_nn.data(), obs.vobs_nn.size()*sizeof(obs_nn_t), cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA =  fill_A_l_4DOFcuda(threads, this->d_A, obs.tx, obs.ty, obs.tz, obs.om, obs.fi, obs.ka, d_obs_nn, obs.vobs_nn.size(),
-			this->d_P, this->d_l);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_obs_nn.copyFromHostToDevice(reinterpret_cast<obs_nn_t *>(obs.vobs_nn.data()), obs.vobs_nn.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	errCUDA =  fill_A_l_4DOFcuda(threads, this->d_A.data, obs.tx, obs.ty, obs.tz, obs.om, obs.fi, obs.ka, d_obs_nn.data, obs.vobs_nn.size(),
+			this->d_P.data, this->d_l.data);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	CCUDA_AX_B_SolverWrapper * wr = new CCUDA_AX_B_SolverWrapper(false, this->cuda_device);
 
 	CCUDA_AX_B_SolverWrapper::CCUDA_AX_B_SolverWrapper_error errAXB =
-					wr->Solve_ATPA_ATPl_x_data_on_GPU(this->threads, this->d_A, this->d_P, this->d_l, x, 4, obs.vobs_nn.size() * 3, solver_method);
+					wr->Solve_ATPA_ATPl_x_data_on_GPU(this->threads, this->d_A.data, this->d_P.data, this->d_l.data, x, 4, obs.vobs_nn.size() * 3, solver_method);
 	if(errAXB!=CCUDA_AX_B_SolverWrapper::success)
 	{
 		std::cout << "problem with solving Ax=B" << std::endl;
@@ -620,8 +752,10 @@ bool CCudaWrapper::registerLS_4DOF(observations_t &obs)
 
 	delete wr;
 
-	errCUDA = cudaFree(this->d_obs_nn); this->d_obs_nn = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_obs_nn); this->d_obs_nn = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_obs_nn.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 	// std::cout << "Ax=B solution:" << std::endl;
 	// for(int i = 0 ; i < 4; i++)
@@ -629,25 +763,30 @@ bool CCudaWrapper::registerLS_4DOF(observations_t &obs)
 	// 	std::cout << "x[" << i <<"]: " << x[i] << std::endl;
 	// }
 
-	errCUDA = cudaFree(this->d_A); this->d_A = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_A); this->d_A = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_A.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_P); this->d_P = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_P); this->d_P = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_P.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_l); this->d_l = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_l.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_l); this->d_l = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	obs.tx += x[0];
-	obs.ty += x[1];
-	obs.tz += x[2];
+	obs.tx += x[0]/2.0f;
+	obs.ty += x[1]/2.0f;
+	obs.tz += x[2]/2.0f;
 	//obs.om += x[3];
 	//obs.fi += x[4];
-	obs.ka += x[3];
+	obs.ka += x[3]/2.0f;
 	return true;
 }
 
-void CCudaWrapper::throw_on_cuda_error(cudaError_t code, const char *file, int line)
+/*void CCudaWrapper::throw_on_cuda_error(cudaError_t code, const char *file, int line)
 {
   if(code != cudaSuccess)
   {
@@ -657,7 +796,7 @@ void CCudaWrapper::throw_on_cuda_error(cudaError_t code, const char *file, int l
     ss >> file_and_line;
     throw thrust::system_error(code, thrust::cuda_category(), file_and_line);
   }
-}
+}*/
 
 void CCudaWrapper::findBestYaw(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB> &first_point_cloud,
 				Eigen::Affine3f first_transform,
@@ -677,17 +816,28 @@ void CCudaWrapper::findBestYaw(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB
 	cudaError_t errCUDA = ::cudaSuccess;
 
 
-	errCUDA = cudaMalloc((void**)&this->d_first_point_cloud, first_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_first_point_cloud, first_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_first_point_cloud.init(first_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_first_point_cloud, first_point_cloud.points.data(), first_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_first_point_cloud, first_point_cloud.points.data(), first_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_second_point_cloud, second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_first_point_cloud.copyFromHostToDevice(reinterpret_cast<lidar_pointcloud::PointXYZIRNLRGB *>(first_point_cloud.points.data()), first_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_second_point_cloud, second_point_cloud.points.data(), second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_second_point_cloud, second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_second_point_cloud.init(second_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	//errCUDA = cudaMemcpy(this->d_second_point_cloud, second_point_cloud.points.data(), second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB), cudaMemcpyHostToDevice);
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_second_point_cloud.copyFromHostToDevice(reinterpret_cast<lidar_pointcloud::PointXYZIRNLRGB *>(second_point_cloud.points.data()), second_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
 
 	Eigen::Affine3f matrix  = second_transform;
 	float r00 = matrix.matrix()(0, 0);
@@ -706,8 +856,9 @@ void CCudaWrapper::findBestYaw(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB
 	float t1 = matrix.matrix()(1, 3);
 	float t2 = matrix.matrix()(2, 3);
 
-	errCUDA = cudaTransformPointCloud(threads, this->d_second_point_cloud, second_point_cloud.points.size(), r00, r10, r20, r01, r11, r21, r02, r12, r22, t0, t1, t2);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	errCUDA = cudaTransformPointCloud(threads, this->d_second_point_cloud.data, second_point_cloud.points.size(), r00, r10, r20, r01, r11, r21, r02, r12, r22, t0, t1, t2);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	matrix = first_transform.inverse();
 	r00 = matrix.matrix()(0, 0);
@@ -726,29 +877,42 @@ void CCudaWrapper::findBestYaw(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB
 	t1 = matrix.matrix()(1, 3);
 	t2 = matrix.matrix()(2, 3);
 
-	errCUDA = cudaTransformPointCloud(threads, this->d_second_point_cloud, second_point_cloud.points.size(), r00, r10, r20, r01, r11, r21, r02, r12, r22, t0, t1, t2);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	errCUDA = cudaTransformPointCloud(threads, this->d_second_point_cloud.data, second_point_cloud.points.size(), r00, r10, r20, r01, r11, r21, r02, r12, r22, t0, t1, t2);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 
-	errCUDA = cudaMalloc((void**)&this->d_point_cloud, second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_point_cloud, second_point_cloud.points.size()*sizeof(lidar_pointcloud::PointXYZIRNLRGB) );
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_point_cloud.init(second_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaCalculateGridParams(this->d_first_point_cloud, first_point_cloud.points.size(),
+	errCUDA = cudaCalculateGridParams(this->d_first_point_cloud.data, first_point_cloud.points.size(),
 			bucket_size, bucket_size, bucket_size, bounding_box_extension, rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_hashTable, first_point_cloud.points.size()*sizeof(hashElement));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_hashTable, first_point_cloud.points.size()*sizeof(hashElement));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_hashTable.init(first_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_buckets, rgd_params.number_of_buckets*sizeof(bucket));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void**)&this->d_nearest_neighbour_indexes, second_point_cloud.points.size()*sizeof(int));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_buckets.init(rgd_params.number_of_buckets);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 
-	errCUDA = cudaCalculateGrid(this->threads, this->d_first_point_cloud, this->d_buckets, this->d_hashTable, first_point_cloud.points.size(), rgd_params);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void**)&this->d_nearest_neighbour_indexes, second_point_cloud.points.size()*sizeof(int));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_nearest_neighbour_indexes.init(second_point_cloud.points.size());
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	errCUDA = cudaCalculateGrid(this->threads, this->d_first_point_cloud.data, this->d_buckets.data, this->d_hashTable.data, first_point_cloud.points.size(), rgd_params);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	int max_number_of_nn = 0;
 	int angle_res = 0;
@@ -778,29 +942,31 @@ void CCudaWrapper::findBestYaw(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB
 		t2 = matrix.matrix()(2, 3);
 
 		errCUDA = cudaTransformPointCloud(threads,
-				this->d_second_point_cloud,
+				this->d_second_point_cloud.data,
 				second_point_cloud.points.size(),
-				this->d_point_cloud,
+				this->d_point_cloud.data,
 				second_point_cloud.points.size(),
 				r00, r10, r20, r01, r11, r21, r02, r12, r22, t0, t1, t2);
-			throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+		//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 		int number_of_nn = 0 ;
 		errCUDA = cudaCountNumberOfSemanticNearestNeighbours(
 				this->threads,
-				this->d_first_point_cloud,
+				this->d_first_point_cloud.data,
 				first_point_cloud.points.size(),
-				this->d_point_cloud,
+				this->d_point_cloud.data,
 				second_point_cloud.points.size(),
-				this->d_hashTable,
-				this->d_buckets,
+				this->d_hashTable.data,
+				this->d_buckets.data,
 				rgd_params,
 				search_radius,
 				max_number_considered_in_INNER_bucket,
 				max_number_considered_in_OUTER_bucket,
-				this->d_nearest_neighbour_indexes,
+				this->d_nearest_neighbour_indexes.data,
 				number_of_nn);
-			throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+			//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 			if(number_of_nn > max_number_of_nn)
 			{
@@ -813,24 +979,31 @@ void CCudaWrapper::findBestYaw(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB
 
 	// std::cout << "angle_result: " << angle_res << std::endl;
 
-	errCUDA = cudaFree(this->d_first_point_cloud); this->d_first_point_cloud = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_first_point_cloud); this->d_first_point_cloud = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_first_point_cloud.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_second_point_cloud); this->d_second_point_cloud = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_second_point_cloud.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_second_point_cloud); this->d_second_point_cloud = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_point_cloud); this->d_point_cloud = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_point_cloud.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_hashTable); this->d_hashTable = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_hashTable.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_buckets); this->d_buckets = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_buckets.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_nearest_neighbour_indexes); this->d_nearest_neighbour_indexes = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_point_cloud); this->d_point_cloud = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(this->d_hashTable); this->d_hashTable = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(this->d_buckets); this->d_buckets = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaFree(this->d_nearest_neighbour_indexes); this->d_nearest_neighbour_indexes = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-
+	this->d_nearest_neighbour_indexes.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	return;
 }

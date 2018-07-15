@@ -6,6 +6,7 @@
 #include <thrust/extrema.h>
 
 #include "cuda_SVD.cu"
+#include "fallback_allocator.cuh"
 
 __global__ void kernel_cudaWarmUpGPU()
 {
@@ -23,6 +24,8 @@ cudaError_t cudaWarmUpGPU()
 cudaError_t cudaCalculateGridParams(lidar_pointcloud::PointXYZIRNLRGB* d_point_cloud, int number_of_points,
 	float resolution_X, float resolution_Y, float resolution_Z, float bounding_box_extension, gridParameters &out_rgd_params)
 {
+	fallback_allocator alloc;
+
 	cudaError_t err = cudaGetLastError();
 
 	try
@@ -32,17 +35,17 @@ cudaError_t cudaCalculateGridParams(lidar_pointcloud::PointXYZIRNLRGB* d_point_c
 		if(err != ::cudaSuccess)return err;
 	
 		thrust::pair<thrust::device_ptr<lidar_pointcloud::PointXYZIRNLRGB>,thrust::device_ptr<lidar_pointcloud::PointXYZIRNLRGB> >
-		 minmaxX=thrust::minmax_element(t_cloud,t_cloud+number_of_points,compareX());
+		 minmaxX=thrust::minmax_element(thrust::cuda::par(alloc), t_cloud,t_cloud+number_of_points,compareX());
 		err = cudaGetLastError();
 		if(err != ::cudaSuccess)return err;
 	
 		thrust::pair<thrust::device_ptr<lidar_pointcloud::PointXYZIRNLRGB>,thrust::device_ptr<lidar_pointcloud::PointXYZIRNLRGB> >
-		 minmaxY=thrust::minmax_element(t_cloud,t_cloud+number_of_points,compareY());
+		 minmaxY=thrust::minmax_element(thrust::cuda::par(alloc), t_cloud,t_cloud+number_of_points,compareY());
 		err = cudaGetLastError();
 		if(err != ::cudaSuccess)return err;
 	
 		thrust::pair<thrust::device_ptr<lidar_pointcloud::PointXYZIRNLRGB>,thrust::device_ptr<lidar_pointcloud::PointXYZIRNLRGB> >
-		 minmaxZ=thrust::minmax_element(t_cloud,t_cloud+number_of_points,compareZ());
+		 minmaxZ=thrust::minmax_element(thrust::cuda::par(alloc), t_cloud,t_cloud+number_of_points,compareZ());
 		err = cudaGetLastError();
 		if(err != ::cudaSuccess)return err;
 		
@@ -200,6 +203,9 @@ __global__ void kernel_copyKeys(hashElement* d_hashTable_in, hashElement* d_hash
 cudaError_t cudaCalculateGrid(int threads, lidar_pointcloud::PointXYZIRNLRGB *d_point_cloud, bucket *d_buckets,
 		hashElement *d_hashTable, int number_of_points, gridParameters rgd_params)
 {
+
+	fallback_allocator alloc;
+
 	cudaError_t err = cudaGetLastError();
 	hashElement* d_temp_hashTable;	cudaMalloc((void**)&d_temp_hashTable,number_of_points*sizeof(hashElement));
 	int blocks=number_of_points/threads + 1;
@@ -213,7 +219,7 @@ cudaError_t cudaCalculateGrid(int threads, lidar_pointcloud::PointXYZIRNLRGB *d_
 	try
 	{
 		thrust::device_ptr<hashElement> t_d_temp_hashTable(d_temp_hashTable);
-		thrust::sort(t_d_temp_hashTable,t_d_temp_hashTable+number_of_points,compareHashElements());
+		thrust::sort(thrust::cuda::par(alloc), t_d_temp_hashTable,t_d_temp_hashTable+number_of_points,compareHashElements());
 	}
 	catch(thrust::system_error &e)
 	{
@@ -737,16 +743,16 @@ cudaError_t cudaSemanticNearestNeighborSearch(
 	return err;
 }
 
-__global__ void kernel_setAllPointsToRemove(bool *d_markers, int number_of_points)
+__global__ void kernel_setAllPointsToRemove(char *d_markers, int number_of_points)
 {
 	int ind=blockIdx.x*blockDim.x+threadIdx.x;
 	if(ind<number_of_points)
 	{
-		d_markers[ind] = false;
+		d_markers[ind] = 0;
 	}
 }
 
-__global__ void kernel_markPointsToRemain(bool *d_markers, lidar_pointcloud::PointXYZIRNLRGB* d_point_cloud, hashElement *d_hashTable, bucket *d_buckets,
+__global__ void kernel_markPointsToRemain(char *d_markers, lidar_pointcloud::PointXYZIRNLRGB* d_point_cloud, hashElement *d_hashTable, bucket *d_buckets,
  gridParameters rgd_params, int number_of_points, int number_of_points_in_bucket_threshold)
 {
 	int ind=blockIdx.x*blockDim.x+threadIdx.x;
@@ -760,12 +766,12 @@ __global__ void kernel_markPointsToRemain(bool *d_markers, lidar_pointcloud::Poi
 		if(index_of_bucket >=0 && index_of_bucket < rgd_params.number_of_buckets)
 		{
 			bucket temp_bucket = d_buckets[index_of_bucket];
-			if(temp_bucket.number_of_points > number_of_points_in_bucket_threshold)d_markers[ind] = true;
+			if(temp_bucket.number_of_points > number_of_points_in_bucket_threshold)d_markers[ind] = 1;
 		}
 	}
 }
 
-cudaError_t cudaRemoveNoiseNaive(int threads, bool *d_markers, lidar_pointcloud::PointXYZIRNLRGB* d_point_cloud,
+cudaError_t cudaRemoveNoiseNaive(int threads, char *d_markers, lidar_pointcloud::PointXYZIRNLRGB* d_point_cloud,
 		hashElement *d_hashTable, bucket *d_buckets, gridParameters rgd_params, int number_of_points,
 		int number_of_points_in_bucket_threshold)
 {
@@ -781,7 +787,7 @@ cudaError_t cudaRemoveNoiseNaive(int threads, bool *d_markers, lidar_pointcloud:
 	return err;
 }
 
-__global__ void kernel_markFirstPointInBuckets(bool *d_markers, hashElement *d_hashTable, bucket *d_buckets,
+__global__ void kernel_markFirstPointInBuckets(char *d_markers, hashElement *d_hashTable, bucket *d_buckets,
  gridParameters rgd_params)
 {
 	int ind=blockIdx.x*blockDim.x+threadIdx.x;
@@ -790,12 +796,12 @@ __global__ void kernel_markFirstPointInBuckets(bool *d_markers, hashElement *d_h
 		int index_of_point = d_buckets[ind].index_begin;
 		if(index_of_point != -1)
 		{
-			d_markers[d_hashTable[index_of_point].index_of_point] = true;
+			d_markers[d_hashTable[index_of_point].index_of_point] = 1;
 		}
 	}
 }
 
-cudaError_t cudaDownSample(int threads, bool *d_markers, hashElement *d_hashTable, bucket *d_buckets, gridParameters rgd_params, int number_of_points)
+cudaError_t cudaDownSample(int threads, char *d_markers, hashElement *d_hashTable, bucket *d_buckets, gridParameters rgd_params, int number_of_points)
 {
 	cudaError_t err = cudaGetLastError();
 	kernel_setAllPointsToRemove<<<number_of_points/threads+1,threads>>>(d_markers, number_of_points);

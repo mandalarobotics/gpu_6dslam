@@ -86,10 +86,10 @@ cudaError_t cudaSemanticNearestNeighborSearch(
 		int max_number_considered_in_OUTER_bucket,
 		int *d_nearest_neighbour_indexes);
 
-cudaError_t cudaRemoveNoiseNaive(int threads, bool *d_markers, lidar_pointcloud::PointXYZIRNLRGB* d_point_cloud,
+cudaError_t cudaRemoveNoiseNaive(int threads, char *d_markers, lidar_pointcloud::PointXYZIRNLRGB* d_point_cloud,
 		hashElement *d_hashTable, bucket *d_buckets, gridParameters rgd_params, int number_of_points, int number_of_points_in_bucket_threshold);
 
-cudaError_t cudaDownSample(int threads, bool *d_markers, hashElement *d_hashTable, bucket *d_buckets, gridParameters rgd_params, int number_of_points);
+cudaError_t cudaDownSample(int threads, char *d_markers, hashElement *d_hashTable, bucket *d_buckets, gridParameters rgd_params, int number_of_points);
 
 cudaError_t cudaSemanticLabelingPlaneEdges(
 		int threads,

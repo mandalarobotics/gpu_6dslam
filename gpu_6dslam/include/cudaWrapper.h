@@ -7,6 +7,8 @@
 
 #include "CCUDAAXBSolverWrapper.h"
 
+#include "DataBuffer.cuh"
+
 #include <thrust/system_error.h>
 #include <thrust/system/cuda/error.h>
 #include <sstream>
@@ -70,7 +72,7 @@ public:
 
 	bool registerLS(observations_t &obs);
 	bool registerLS_4DOF(observations_t &obs);
-	void throw_on_cuda_error(cudaError_t code, const char *file, int line);
+	//void throw_on_cuda_error(cudaError_t code, const char *file, int line);
 
 	void findBestYaw(pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB> &pointcloud0,
 				Eigen::Affine3f transform0,
@@ -89,19 +91,42 @@ public:
 	int threadsNV;
 	int cuda_device;
 
-	lidar_pointcloud::PointXYZIRNLRGB *d_point_cloud;
-	lidar_pointcloud::PointXYZIRNLRGB *d_first_point_cloud;
-	lidar_pointcloud::PointXYZIRNLRGB *d_second_point_cloud;
-	int *d_nearest_neighbour_indexes;
-	hashElement* d_hashTable;
-	bucket* d_buckets;
-	bool* d_markers;
-	simple_point3D *d_mean;
+	//lidar_pointcloud::PointXYZIRNLRGB *d_point_cloud;
+	DataBuffer<lidar_pointcloud::PointXYZIRNLRGB, fallback_allocator> d_point_cloud;
 
-	double *d_A;
-	double *d_P;
-	double *d_l;
-	obs_nn_t *d_obs_nn;
+	//lidar_pointcloud::PointXYZIRNLRGB *d_first_point_cloud;
+	DataBuffer<lidar_pointcloud::PointXYZIRNLRGB, fallback_allocator> d_first_point_cloud;
+
+	//lidar_pointcloud::PointXYZIRNLRGB *d_second_point_cloud;
+	DataBuffer<lidar_pointcloud::PointXYZIRNLRGB, fallback_allocator> d_second_point_cloud;
+
+	//int *d_nearest_neighbour_indexes;
+	DataBuffer<int, fallback_allocator> d_nearest_neighbour_indexes;
+
+	//hashElement* d_hashTable;
+	DataBuffer<hashElement, fallback_allocator> d_hashTable;
+
+	//bucket* d_buckets;
+	DataBuffer<bucket, fallback_allocator> d_buckets;
+
+	//bool* d_markers;
+	DataBuffer<char, fallback_allocator> d_markers;
+
+	//simple_point3D *d_mean;
+	DataBuffer<simple_point3D, fallback_allocator> d_mean;
+
+	//double *d_A;
+	DataBuffer<double, fallback_allocator> d_A;
+
+	//double *d_P;
+	DataBuffer<double, fallback_allocator> d_P;
+
+	//double *d_l;
+	DataBuffer<double, fallback_allocator> d_l;
+
+	//obs_nn_t *d_obs_nn;
+	DataBuffer<obs_nn_t, fallback_allocator> d_obs_nn;
+
 };
 
 /*
