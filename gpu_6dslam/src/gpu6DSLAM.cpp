@@ -59,7 +59,7 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 
 	//pc processing
 	//noise removal
-	ROS_DEBUG("Starting cudaWrapper.removeNoiseNaive, pc.size : %d", pc.size());
+	ROS_INFO("Starting cudaWrapper.removeNoiseNaive, pc.size : %d", pc.size());
 	cudaWrapper.removeNoiseNaive(pc,
 			this->noise_removal_resolution,
 			this->noise_removal_bounding_box_extension,
@@ -67,11 +67,11 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 
 	//downsampling
 
-	ROS_DEBUG("Starting cudaWrapper.downsampling, pc.size : %d", pc.size());
+	ROS_INFO("Starting cudaWrapper.downsampling, pc.size : %d", pc.size());
 	cudaWrapper.downsampling(pc, this->downsampling_resolution, this->downsampling_resolution);
 
 	//semantic classification
-	ROS_DEBUG("Starting cudaWrapper.classify, pc.size : %d", pc.size());
+	ROS_INFO("Starting cudaWrapper.classify, pc.size : %d", pc.size());
 	cudaWrapper.classify( pc,
 			this->semantic_classification_normal_vectors_search_radius,
 			this->semantic_classification_curvature_threshold,
@@ -86,7 +86,7 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 
 	//save processed data
 	// std::cout << "processed scan: " << processedDataFileName << " will be saved in: " << processedDataFileName << std::endl;
-	ROS_DEBUG("Starting pcl::io::savePCDFileBinary, pc.size : %d", pc.size());
+	ROS_INFO("Starting pcl::io::savePCDFileBinary, pc.size : %d", pc.size());
 	if(pcl::io::savePCDFileBinary(processedDataFileName.string(), pc) == -1)
 	{
 		std::cout << "ERROR: problem with saving file: " << processedDataFileName << std::endl;
@@ -155,32 +155,32 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 		 */
 
 		// std::cout << "registerLastArrivedScan START" << std::endl;
-		ROS_DEBUG("Starting registerLastArrivedScan - step 1");
+		ROS_INFO("Starting registerLastArrivedScan - step 1");
 		for(int i = 0 ; i < this->slam_registerLastArrivedScan_number_of_iterations_step1; i++)
 		{
 			registerLastArrivedScan(cudaWrapper, this->slam_search_radius_step1, this->slam_bucket_size_step1);
 		}
-		ROS_DEBUG("Starting registerLastArrivedScan - step 2");
+		ROS_INFO("Starting registerLastArrivedScan - step 2");
 		for(int i = 0 ; i < this->slam_registerLastArrivedScan_number_of_iterations_step2; i++)
 		{
 			registerLastArrivedScan(cudaWrapper, this->slam_search_radius_step2, this->slam_bucket_size_step2);
 		}
-		ROS_DEBUG("Starting registerLastArrivedScan - step 3");
+		ROS_INFO("Starting registerLastArrivedScan - step 3");
 		for(int i = 0 ; i < this->slam_registerLastArrivedScan_number_of_iterations_step3; i++)
 		{
 			registerLastArrivedScan(cudaWrapper, this->slam_search_radius_step3, this->slam_bucket_size_step3);
 		}
-		ROS_DEBUG("Starting slam_registerAll - step 1");
+		ROS_INFO("Starting slam_registerAll - step 1");
 		for(int i = 0 ; i < this->slam_registerAll_number_of_iterations_step1; i++)
 		{
 			registerAll(cudaWrapper, this->slam_search_radius_step1, this->slam_bucket_size_step1, 3);
 		}
-		ROS_DEBUG("Starting slam_registerAll - step 2");
+		ROS_INFO("Starting slam_registerAll - step 2");
 		for(int i = 0 ; i < this->slam_registerAll_number_of_iterations_step2; i++)
 		{
 			registerAll(cudaWrapper, this->slam_search_radius_step2, this->slam_bucket_size_step2, 3);
 		}
-		ROS_DEBUG("Starting slam_registerAll - step 3");
+		ROS_INFO("Starting slam_registerAll - step 3");
 		for(int i = 0 ; i < this->slam_registerAll_number_of_iterations_step3; i++)
 		{
 			registerAll(cudaWrapper, this->slam_search_radius_step3, this->slam_bucket_size_step3, 3);
@@ -193,7 +193,7 @@ void gpu6DSLAM::registerSingleScan(pcl::PointCloud<lidar_pointcloud::PointXYZIRN
 			transformPointCloud(pc_before_local, this->vmregistered[i]);
 			pc_after += pc_before_local;
 		}
-		ROS_DEBUG("Done");
+		ROS_INFO("Done");
 		// pcl::io::savePCDFileBinary(std::string("/tmp/pc_after_")+iso_time_str + std::string(".pcd"), pc_after);
 
 
@@ -289,6 +289,8 @@ void gpu6DSLAM::registerLastArrivedScan(CCudaWrapper &cudaWrapper, float slam_se
 
 	for(size_t j = i-1; j < i; j++)
 	{
+		ROS_INFO("registerLastArrivedScan node: %d of %d", j, i-1);
+
 		Eigen::Vector3f omfika2;
 		Eigen::Vector3f xyz2;
 		Eigen::Affine3f pose2;
@@ -440,6 +442,8 @@ void gpu6DSLAM::registerAll(CCudaWrapper &cudaWrapper, float slam_search_radius,
 	for(size_t i = vpc.size() - number_of_last_EOZ; i < vpc.size(); i++)
 	{
 		// std::cout << "registerAll node: " << i << " of: " << vpc.size() - 1 << std::endl;
+
+		ROS_INFO("registerAll node: %d of %d", i, vpc.size() - 1);
 
 		Eigen::Vector3f omfika1;
 		Eigen::Vector3f xyz1;

@@ -471,7 +471,8 @@ void callbackPointcloud2(const sensor_msgs::PointCloud2::ConstPtr& msg)
 		pcl::fromROSMsg(*msg, pc);
 
 		if(pc.points.size() < 1000){
-			std::cout << "pc.points.size() < 1000 ---INPUT CLOUD TO SMALL!!!--- return" << std::endl;
+			//std::cout << "pc.points.size() < 1000 ---INPUT CLOUD TO SMALL!!!--- return" << std::endl;
+			ROS_INFO("pc.points.size() < 1000 ---INPUT CLOUD TO SMALL!!! - I will not process data");
 			return;
 		}
 
@@ -541,7 +542,9 @@ void callbackPointcloud2(const sensor_msgs::PointCloud2::ConstPtr& msg)
 		if(publisher_metascan.getNumSubscribers() > 0)
 		{
 			pcl::PointCloud<lidar_pointcloud::PointXYZIRNLRGB> metascan = slam->getMetascan(m);
-			std::cout << "Size metascan: " << metascan.size() << std::endl;
+			//std::cout << "Size metascan: " << metascan.size() << std::endl;
+
+			ROS_INFO("Size metascan: %d", metascan.size());
 
 			pcl::PCLPointCloud2 pcl_pc2;
 			pcl::toPCLPointCloud2(metascan,pcl_pc2);
