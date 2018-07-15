@@ -1,6 +1,8 @@
 #ifndef SRC_LS3DMULTICUDA_CCUDAAXBSOLVERWRAPPER_H_
 #define SRC_LS3DMULTICUDA_CCUDAAXBSOLVERWRAPPER_H_
 
+#include "DataBuffer.cuh"
+
 #include <time.h>
 
 #include <cuda_runtime.h>
@@ -103,23 +105,48 @@ public:
 	void throw_on_cuda_error(cudaError_t code, const char *file, int line);
 
 
-	double *d_A ;
-	double *d_x ;
-	double *d_b ;
+	//double *d_A ;
+	DataBuffer<double, fallback_allocator> d_A;
 
-	double *d_P;
-	double *d_AtP;
-	double *d_AtPA;
-	double *d_l;
-	double *d_AtPl;
+	//double *d_x ;
+	DataBuffer<double, fallback_allocator> d_x;
 
-	double *d_a;
-	double *d_c;
+	//double *d_b ;
+	DataBuffer<double, fallback_allocator> d_b;
 
-	int *info;
-	double *buffer;
-	int *ipiv;
-	double *tau;
+	//double *d_P;
+	DataBuffer<double, fallback_allocator> d_P;
+
+	//double *d_AtP;
+	DataBuffer<double, fallback_allocator> d_AtP;
+
+	//double *d_AtPA;
+	DataBuffer<double, fallback_allocator> d_AtPA;
+
+	//double *d_l;
+	DataBuffer<double, fallback_allocator> d_l;
+
+	//double *d_AtPl;
+	DataBuffer<double, fallback_allocator> d_AtPl;
+
+	//double *d_a;
+	DataBuffer<double, fallback_allocator> d_a;
+
+	//double *d_c;
+	DataBuffer<double, fallback_allocator> d_c;
+
+	//int *info;
+	DataBuffer<int, fallback_allocator> info;
+
+	//double *buffer;
+	DataBuffer<double, fallback_allocator> buffer;
+
+	//int *ipiv;
+	DataBuffer<int, fallback_allocator> ipiv;
+
+	//double *tau;
+	DataBuffer<double, fallback_allocator> tau;
+
 };
 
 #endif /* SRC_LS3DMULTICUDA_CCUDAAXBSOLVERWRAPPER_H_ */

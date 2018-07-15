@@ -73,9 +73,9 @@ bool CCudaWrapper::getNumberOfAvailableThreads(int cudaDevice, int &threads, int
 	cudaDeviceProp prop;
 	cudaGetDeviceProperties(&prop, cudaDevice);
 
-	threads = 0;
-	threadsNV = 0;
-	if(prop.major == 2)
+	threads = 256;
+	threadsNV = 256;
+	/*if(prop.major == 2)
 	{
 		threads=prop.maxThreadsPerBlock/2;
 		threadsNV=prop.maxThreadsPerBlock/8;
@@ -86,7 +86,7 @@ bool CCudaWrapper::getNumberOfAvailableThreads(int cudaDevice, int &threads, int
 	}else
 	{
 		return false;
-	}
+	}*/
 	return true;
 }
 

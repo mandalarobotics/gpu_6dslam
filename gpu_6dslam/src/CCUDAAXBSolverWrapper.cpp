@@ -56,23 +56,23 @@ CCUDA_AX_B_SolverWrapper::CCUDA_AX_B_SolverWrapper(bool _CCUDA_AX_B_SolverWrappe
 	if(this->CCUDA_AX_B_SolverWrapperDEBUG)cout_cublasStatus_t(cublas_status, "cublasSetStream(cublasHandle, stream)");
 	assert(CUBLAS_STATUS_SUCCESS == cublas_status);
 
-	this->d_A = 0;
-	this->d_x = 0;
+	//this->d_A = 0;
+	//this->d_x = 0;
 
-	this->d_P = 0;
-	this->d_AtP = 0;
-	this->d_AtPA = 0;
-	this->d_l = 0;
-	this->d_AtPl = 0;
+	//this->d_P = 0;
+	//this->d_AtP = 0;
+	//this->d_AtPA = 0;
+	//this->d_l = 0;
+	//this->d_AtPl = 0;
 
-	this->d_a = 0;
-	this->d_b = 0;
-	this->d_c = 0;
+	//this->d_a = 0;
+	//this->d_b = 0;
+	//this->d_c = 0;
 
-	this->info = 0;
-	this->buffer = 0;
-	this->ipiv = 0;
-	this->tau = 0;
+	//this->info = 0;
+	//this->buffer = 0;
+	//this->ipiv = 0;
+	//this->tau = 0;
 }
 
 CCUDA_AX_B_SolverWrapper::~CCUDA_AX_B_SolverWrapper() {
@@ -100,21 +100,47 @@ CCUDA_AX_B_SolverWrapper::~CCUDA_AX_B_SolverWrapper() {
 	   		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 	}
 
-	cudaFree(this->d_A);
-	cudaFree(this->d_x);
-	cudaFree(this->d_P);
-	cudaFree(this->d_AtP);
-	cudaFree(this->d_AtPA);
-	cudaFree(this->d_l);
-	cudaFree(this->d_AtPl);
-	cudaFree(this->d_a);
-	cudaFree(this->d_b);
-	cudaFree(this->d_c);
+	//cudaFree(this->d_A);
+	this->d_A.dispose();
 
-	cudaFree(this->info);
-	cudaFree(this->buffer);
-	cudaFree(this->ipiv);
-	cudaFree(this->tau);
+	//cudaFree(this->d_x);
+	this->d_x.dispose();
+
+	//cudaFree(this->d_P);
+	this->d_P.dispose();
+
+	//cudaFree(this->d_AtP);
+	this->d_AtP.dispose();
+
+	//cudaFree(this->d_AtPA);
+	this->d_AtPA.dispose();
+
+	//cudaFree(this->d_l);
+	this->d_l.dispose();
+
+	//cudaFree(this->d_AtPl);
+	this->d_AtPl.dispose();
+
+	//cudaFree(this->d_a);
+	this->d_a.dispose();
+
+	//cudaFree(this->d_b);
+	this->d_b.dispose();
+
+	//cudaFree(this->d_c);
+	this->d_c.dispose();
+
+	//cudaFree(this->info);
+	this->info.dispose();
+
+	//cudaFree(this->buffer);
+	this->buffer.dispose();
+
+	//cudaFree(this->ipiv);
+	this->ipiv.dispose();
+
+	//cudaFree(this->tau);
+	this->tau.dispose();
 }
 
 double CCUDA_AX_B_SolverWrapper::Solve(double *a,double *b,double *x, int a_rows, int a_cols, int b_cols, char method)
@@ -157,49 +183,75 @@ double CCUDA_AX_B_SolverWrapper::Solve(double *a,double *b,double *x, int a_rows
 		        }
 
 		    cudaError_t errCUDA = ::cudaSuccess;
-		    errCUDA = cudaMalloc((void **)&d_A, sizeof(double)*lda*colsA);
-		    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    //errCUDA = cudaMalloc((void **)&d_A, sizeof(double)*lda*colsA);
+		    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    d_A.init(lda*colsA);
+		    throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-		    errCUDA = cudaMalloc((void **)&d_x, sizeof(double)*colsA);
-		    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-		    errCUDA = cudaMalloc((void **)&d_b, sizeof(double)*rowsA);
-		    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    //errCUDA = cudaMalloc((void **)&d_x, sizeof(double)*colsA);
+		    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    d_x.init(colsA);
+		    throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-		    errCUDA = cudaMemcpy(d_A, a, sizeof(double)*lda*colsA, cudaMemcpyHostToDevice);
-		    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-		    errCUDA = cudaMemcpy(d_b, b, sizeof(double)*rowsA, cudaMemcpyHostToDevice);
-		    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    //errCUDA = cudaMalloc((void **)&d_b, sizeof(double)*rowsA);
+		    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    d_b.init(rowsA);
+		    throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+		    //errCUDA = cudaMemcpy(d_A, a, sizeof(double)*lda*colsA, cudaMemcpyHostToDevice);
+		    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    this->d_A.copyFromHostToDevice(a, lda*colsA);
+		    throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+		    //errCUDA = cudaMemcpy(d_b, b, sizeof(double)*rowsA, cudaMemcpyHostToDevice);
+		    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    this->d_b.copyFromHostToDevice(b, rowsA);
+			throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
 
 		    if ( method == chol)
 		    {
-		         linearSolverCHOL(handle, rowsA, d_A, lda, d_b, d_x);
+		         linearSolverCHOL(handle, rowsA, d_A.data, lda, d_b.data, d_x.data);
 		    }
 		    else if ( method == lu )
 		    {
-		         linearSolverLU(handle, rowsA, d_A, lda, d_b, d_x);
+		         linearSolverLU(handle, rowsA, d_A.data, lda, d_b.data, d_x.data);
 		    }
 		    else if ( method ==  qr)
 		    {
-		         linearSolverQR(handle, rowsA, d_A, lda, d_b, d_x);
+		         linearSolverQR(handle, rowsA, d_A.data, lda, d_b.data, d_x.data);
 		    }
 		    else
 		    {
 		        fprintf(stderr, "Error: %d is unknown function\n", method);
 		    }
 
-		    errCUDA = cudaMemcpy(x, d_x, sizeof(double)*colsA, cudaMemcpyDeviceToHost);
-		    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    //errCUDA = cudaMemcpy(x, d_x, sizeof(double)*colsA, cudaMemcpyDeviceToHost);
+		    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    this->d_x.copyFromDeviceToHost(x);
+		    throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-			errCUDA = cudaFree(this->d_A); this->d_A = 0;
-		    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-			errCUDA = cudaFree(this->d_x); this->d_x = 0;
-				throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-			errCUDA = cudaFree(this->d_b); this->d_b = 0;
-				throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+			//errCUDA = cudaFree(this->d_A); this->d_A = 0;
+		    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    this->d_A.dispose();
+		    throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+			//errCUDA = cudaFree(this->d_x); this->d_x = 0;
+			//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		    this->d_x.dispose();
+		    throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+			//errCUDA = cudaFree(this->d_b); this->d_b = 0;
+			//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+			this->d_b.dispose();
+		    throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 
 		solve_time=(double)( clock () - begin_time ) /  CLOCKS_PER_SEC;
@@ -214,35 +266,69 @@ double CCUDA_AX_B_SolverWrapper::Compute_AtP(int threads, double *A, double *P, 
 	double solve_time = 0.0;
 
 	cudaError_t errCUDA = ::cudaSuccess;
-	errCUDA = cudaMalloc((void **)&this->d_A, sizeof(double)*rows*columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&this->d_A, sizeof(double)*rows*columns);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_A.init(rows*columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&this->d_P, sizeof(double)*columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&this->d_AtP, sizeof(double)*rows*columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_A, A, sizeof(double)*rows*columns, cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&this->d_P, sizeof(double)*columns);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_P.init(columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_P, P, sizeof(double)*columns, cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaCompute_AtP(threads, this->d_A, this->d_P, this->d_AtP, rows, columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&this->d_AtP, sizeof(double)*rows*columns);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(AtP, d_AtP, sizeof(double)*rows*columns, cudaMemcpyDeviceToHost);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_AtP.init(rows*columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_A); this->d_A = 0;
-	  	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_A, A, sizeof(double)*rows*columns, cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_A.copyFromHostToDevice(A, rows*columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_P); this->d_P = 0;
-	   	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_AtP); this->d_AtP = 0;
-	  	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(this->d_P, P, sizeof(double)*columns, cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_P.copyFromHostToDevice(P, columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+	errCUDA = cudaCompute_AtP(threads, this->d_A.data, this->d_P.data, this->d_AtP.data, rows, columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	//errCUDA = cudaMemcpy(AtP, d_AtP, sizeof(double)*rows*columns, cudaMemcpyDeviceToHost);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_AtP.copyFromDeviceToHost(AtP);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+	//errCUDA = cudaFree(this->d_A); this->d_A = 0;
+	//  	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_A.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+//	errCUDA = cudaFree(this->d_P); this->d_P = 0;
+	//   	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_P.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaFree(this->d_AtP); this->d_AtP = 0;
+	//  	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_AtP.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
 
 	solve_time=(double)( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	return solve_time;
@@ -255,20 +341,41 @@ double CCUDA_AX_B_SolverWrapper::Multiply(double *a, double *b,double *c, int a_
 	begin_time = clock();
 
 	cudaError_t errCUDA = ::cudaSuccess;
-	errCUDA = cudaMalloc((void **)&this->d_a, sizeof(double)*a_rows*a_cols);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&this->d_a, sizeof(double)*a_rows*a_cols);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&this->d_b, sizeof(double)*a_cols*b_cols);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_a.init(a_rows*a_cols);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&this->d_c, sizeof(double)*a_rows*b_cols);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_a, a, sizeof(double)*a_rows*a_cols, cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&this->d_b, sizeof(double)*a_cols*b_cols);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(this->d_b, b, sizeof(double)*a_cols*b_cols, cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_b.init(a_cols*b_cols);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+	//errCUDA = cudaMalloc((void **)&this->d_c, sizeof(double)*a_rows*b_cols);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_c.init(a_rows*b_cols);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	//errCUDA = cudaMemcpy(this->d_a, a, sizeof(double)*a_rows*a_cols, cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_a.copyFromHostToDevice(a, a_rows*a_cols);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaMemcpy(this->d_b, b, sizeof(double)*a_cols*b_cols, cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_b.copyFromHostToDevice(b, a_cols*b_cols);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
 
 		/*enum cublasStatus_t {
 		    CUBLAS_STATUS_SUCCESS,
@@ -283,22 +390,32 @@ double CCUDA_AX_B_SolverWrapper::Multiply(double *a, double *b,double *c, int a_
 		    CUBLAS_STATUS_LICENSE_ERROR,
 		}*/
 	//ToDo cublasStatus_t error check is missing
-	multiplyCUBLAS( cublasHandle, this->d_a, this->d_b, this->d_c, a_rows, a_cols, b_cols);
-	errCUDA = cudaGetLastError();
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	multiplyCUBLAS( cublasHandle, this->d_a.data, this->d_b.data, this->d_c.data, a_rows, a_cols, b_cols);
+	//errCUDA = cudaGetLastError();
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(c, this->d_c, sizeof(double)*a_rows*b_cols, cudaMemcpyDeviceToHost);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_a); this->d_a = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(c, this->d_c, sizeof(double)*a_rows*b_cols, cudaMemcpyDeviceToHost);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_b); this->d_b = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_c.copyFromDeviceToHost(c);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_c); this->d_c = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
+	//errCUDA = cudaFree(d_a); this->d_a = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_a.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_b); this->d_b = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_b.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+	//errCUDA = cudaFree(d_c); this->d_c = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_c.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	solve_time=(double)( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	return solve_time;
 }
@@ -308,98 +425,177 @@ CCUDA_AX_B_SolverWrapper::CCUDA_AX_B_SolverWrapper_error CCUDA_AX_B_SolverWrappe
 		int rows, int columns, CCUDA_AX_B_SolverWrapper::Solver_Method solver_method)
 {
 	cudaError_t errCUDA = ::cudaSuccess;
-	errCUDA = cudaMalloc((void **)&d_A, sizeof(double)*rows*columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&d_A, sizeof(double)*rows*columns);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_A.init(rows*columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(d_A, A, sizeof(double)*rows*columns, cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(d_A, A, sizeof(double)*rows*columns, cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&d_P, sizeof(double)*columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaMemcpy(d_P, P, sizeof(double)*columns, cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaMalloc((void **)&d_AtP, sizeof(double)*rows*columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-
-	errCUDA = cudaCompute_AtP(threads, d_A, d_P, d_AtP, rows, columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_A.copyFromHostToDevice(A, rows*columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 
-	errCUDA = cudaFree(d_P);
-	   	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&d_P, sizeof(double)*columns);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_P.init(columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 
-	errCUDA = cudaMalloc((void **)&d_AtPA, sizeof(double)*rows*rows); //
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	multiplyCUBLAS( cublasHandle, d_AtP, d_A, d_AtPA, rows, columns, rows);
-	errCUDA = cudaGetLastError();
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(d_P, P, sizeof(double)*columns, cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_P.copyFromHostToDevice(P, columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_A);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&d_l, sizeof(double)*columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(d_l, l, sizeof(double)*columns, cudaMemcpyHostToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&d_AtPl, sizeof(double)*rows);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&d_AtP, sizeof(double)*rows*columns);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_AtP.init(rows*columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	multiplyCUBLAS(cublasHandle, d_AtP, d_l, d_AtPl, rows, columns, 1);
-	errCUDA = cudaGetLastError();
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_l);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_AtP);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	errCUDA = cudaCompute_AtP(threads, d_A.data, d_P.data, d_AtP.data, rows, columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&d_x, sizeof(double)*rows);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	//errCUDA = cudaFree(d_P);
+	//   	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_P.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+	//errCUDA = cudaMalloc((void **)&d_AtPA, sizeof(double)*rows*rows); //
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_AtPA.init(rows*rows);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	multiplyCUBLAS( cublasHandle, d_AtP.data, d_A.data, d_AtPA.data, rows, columns, rows);
+	//errCUDA = cudaGetLastError();
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaFree(d_A);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_A.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaMalloc((void **)&d_l, sizeof(double)*columns);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_l.init(columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+	//errCUDA = cudaMemcpy(d_l, l, sizeof(double)*columns, cudaMemcpyHostToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_l.copyFromHostToDevice(l, columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+
+	//errCUDA = cudaMalloc((void **)&d_AtPl, sizeof(double)*rows);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_AtPl.init(rows);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+
+	multiplyCUBLAS(cublasHandle, d_AtP.data, d_l.data, d_AtPl.data, rows, columns, 1);
+	//errCUDA = cudaGetLastError();
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+	//errCUDA = cudaFree(d_l);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_l.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaFree(d_AtP);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_AtP.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaMalloc((void **)&d_x, sizeof(double)*rows);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_x.init(rows);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 	if ( solver_method == chol)
 	{
-		linearSolverCHOL(handle, rows, d_AtPA, rows, d_AtPl, d_x);
-		errCUDA = cudaGetLastError();
-			throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		linearSolverCHOL(handle, rows, d_AtPA.data, rows, d_AtPl.data, d_x.data);
+		//errCUDA = cudaGetLastError();
+		//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	}
 	else if ( solver_method == lu )
 	{
-		linearSolverLU(handle, rows, d_AtPA, rows, d_AtPl, d_x);
-		errCUDA = cudaGetLastError();
-			throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		linearSolverLU(handle, rows, d_AtPA.data, rows, d_AtPl.data, d_x.data);
+		//errCUDA = cudaGetLastError();
+		//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	}
 	else if ( solver_method ==  qr)
 	{
-	    linearSolverQR(handle, rows, d_AtPA, rows, d_AtPl, d_x);
-	    errCUDA = cudaGetLastError();
-	    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	    linearSolverQR(handle, rows, d_AtPA.data, rows, d_AtPl.data, d_x.data);
+	    //errCUDA = cudaGetLastError();
+	    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	    throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	}
 	else
 	{
 		return fail_problem_with_CUDA_AX_B_Solver;
 	}
 
-	errCUDA = cudaGetLastError();
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(x, d_x, sizeof(double)*rows, cudaMemcpyDeviceToHost);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaGetLastError();
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_AtPA);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(x, d_x, sizeof(double)*rows, cudaMemcpyDeviceToHost);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_AtPl);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_x.copyFromDeviceToHost(x);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(d_x);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+
+	//errCUDA = cudaFree(d_AtPA);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_AtPA.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaFree(d_AtPl);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_AtPl.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	//errCUDA = cudaFree(d_x);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_x.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 	return success;
 }
@@ -408,69 +604,107 @@ CCUDA_AX_B_SolverWrapper::CCUDA_AX_B_SolverWrapper_error CCUDA_AX_B_SolverWrappe
 			double *x, int rows, int columns, Solver_Method solver_method)
 {
 	cudaError_t errCUDA = ::cudaSuccess;
-	errCUDA = cudaMalloc((void **)&this->d_AtP, sizeof(double)*rows*columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&this->d_AtP, sizeof(double)*rows*columns);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_AtP.init(rows*columns);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaCompute_AtP(threads, _d_A, _d_P, this->d_AtP, rows, columns);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	errCUDA = cudaCompute_AtP(threads, _d_A, _d_P, this->d_AtP.data, rows, columns);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&this->d_AtPA, sizeof(double)*rows*rows); //
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&this->d_AtPA, sizeof(double)*rows*rows); //
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	multiplyCUBLAS( cublasHandle, this->d_AtP, _d_A, this->d_AtPA, rows, columns, rows);
-	errCUDA = cudaGetLastError();
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&this->d_AtPl, sizeof(double)*rows);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_AtPA.init(rows*rows);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	multiplyCUBLAS(cublasHandle, this->d_AtP, _d_l, this->d_AtPl, rows, columns, 1);
-	errCUDA = cudaGetLastError();
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_AtP); this->d_AtP = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	multiplyCUBLAS( cublasHandle, this->d_AtP.data, _d_A, this->d_AtPA.data, rows, columns, rows);
+	//errCUDA = cudaGetLastError();
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaMalloc((void **)&this->d_x, sizeof(double)*rows);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc((void **)&this->d_AtPl, sizeof(double)*rows);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_AtPl.init(rows);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	multiplyCUBLAS(cublasHandle, this->d_AtP.data, _d_l, this->d_AtPl.data, rows, columns, 1);
+	//errCUDA = cudaGetLastError();
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaFree(this->d_AtP); this->d_AtP = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_AtP.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	//errCUDA = cudaMalloc((void **)&this->d_x, sizeof(double)*rows);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_x.init(rows);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
 
 	if ( solver_method == chol)
 	{
-		linearSolverCHOL(handle, rows, this->d_AtPA, rows, this->d_AtPl, this->d_x);
-		errCUDA = cudaGetLastError();
-			throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		linearSolverCHOL(handle, rows, this->d_AtPA.data, rows, this->d_AtPl.data, this->d_x.data);
+		//errCUDA = cudaGetLastError();
+		//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	}
 	else if ( solver_method == lu )
 	{
-		linearSolverLU(handle, rows, this->d_AtPA, rows, this->d_AtPl, this->d_x);
-		errCUDA = cudaGetLastError();
-			throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		linearSolverLU(handle, rows, this->d_AtPA.data, rows, this->d_AtPl.data, this->d_x.data);
+		//errCUDA = cudaGetLastError();
+		//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	}
 	else if ( solver_method ==  qr)
 	{
-		linearSolverQR(handle, rows, this->d_AtPA, rows, this->d_AtPl, this->d_x);
-		errCUDA = cudaGetLastError();
-			throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		linearSolverQR(handle, rows, this->d_AtPA.data, rows, this->d_AtPl.data, this->d_x.data);
+		//errCUDA = cudaGetLastError();
+		//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+		throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 	}
 	else
 	{
 		return fail_problem_with_CUDA_AX_B_Solver;
 	}
 
-	errCUDA = cudaGetLastError();
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaGetLastError();
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaMemcpy(x, this->d_x, sizeof(double)*rows, cudaMemcpyDeviceToHost);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_AtPA); this->d_AtPA = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(x, this->d_x, sizeof(double)*rows, cudaMemcpyDeviceToHost);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_AtPl); this->d_AtPl = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_x.copyFromDeviceToHost(x);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	errCUDA = cudaFree(this->d_x); this->d_x = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaFree(this->d_AtPA); this->d_AtPA = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_AtPA.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	//errCUDA = cudaFree(this->d_AtPl); this->d_AtPl = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	this->d_AtPl.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaFree(this->d_x); this->d_x = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	this->d_x.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
 
 	return success;
 }
@@ -498,42 +732,78 @@ int CCUDA_AX_B_SolverWrapper::linearSolverCHOL(
 	//cusolverStatus_t
 	checkCudaErrors(cusolverDnDpotrf_bufferSize(handle, uplo, n, (double*)Acopy, lda, &bufferSize));
 
-	errCUDA = cudaMalloc(&info, sizeof(int));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaMalloc(&buffer, sizeof(double)*bufferSize);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaMalloc(&d_A, sizeof(double)*lda*n);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMalloc(&info, sizeof(int));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	info.init(1);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
+
+	//errCUDA = cudaMalloc(&buffer, sizeof(double)*bufferSize);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	buffer.init(bufferSize);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaMalloc(&d_A, sizeof(double)*lda*n);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_A.init(lda*n);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 	// prepare a copy of A because potrf will overwrite A with L
-	errCUDA = cudaMemcpy(d_A, Acopy, sizeof(double)*lda*n, cudaMemcpyDeviceToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaMemset(info, 0, sizeof(int));
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	//errCUDA = cudaMemcpy(d_A, Acopy, sizeof(double)*lda*n, cudaMemcpyDeviceToDevice);
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-	checkCudaErrors(cusolverDnDpotrf(handle, uplo, n, d_A, lda, buffer, bufferSize, info));
+	//d_A.copyFromDeviceToDevice()
 
-	errCUDA = cudaMemcpy(&h_info, info, sizeof(int), cudaMemcpyDeviceToHost);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	cudaMemcpy(d_A.data, Acopy, sizeof(double)*lda*n, cudaMemcpyDeviceToDevice);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+	errCUDA = cudaMemset(info.data, 0, sizeof(int));
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	checkCudaErrors(cusolverDnDpotrf(handle, uplo, n, d_A.data, lda, buffer.data, bufferSize, info.data));
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+
+	errCUDA = cudaMemcpy(&h_info, info.data, sizeof(int), cudaMemcpyDeviceToHost);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
 	if ( 0 != h_info ){
 		fprintf(stderr, "Error: linearSolverCHOL failed\n");
 	}
 
 	errCUDA = cudaMemcpy(x, b, sizeof(double)*n, cudaMemcpyDeviceToDevice);
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
 
-	checkCudaErrors(cusolverDnDpotrs(handle, uplo, n, 1, d_A, lda, x, n, info));
+	checkCudaErrors(cusolverDnDpotrs(handle, uplo, n, 1, d_A.data, lda, x, n, info.data));
 
 	checkCudaErrors(cudaDeviceSynchronize());
 
-	errCUDA = cudaFree(info); info = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaFree(buffer); buffer = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaFree(d_A); d_A = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+
+	//errCUDA = cudaFree(info); info = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	info.dispose();
+	throw_cuda_error(cudaGetLastError(), __FILE__, __LINE__);
+
+	//errCUDA = cudaFree(buffer); buffer = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	buffer.dispose();
+	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+
+	//errCUDA = cudaFree(d_A); d_A = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+	d_A.dispose();
+	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
 	return 0;
 }
@@ -557,43 +827,83 @@ int CCUDA_AX_B_SolverWrapper::linearSolverLU(
 
     checkCudaErrors(cusolverDnDgetrf_bufferSize(handle, n, n, (double*)Acopy, lda, &bufferSize));
 
-    errCUDA = cudaMalloc(&info, sizeof(int));
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    errCUDA = cudaMalloc(&buffer, sizeof(double)*bufferSize);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    errCUDA = cudaMalloc(&d_A, sizeof(double)*lda*n);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    errCUDA = cudaMalloc(&ipiv, sizeof(int)*n);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    //errCUDA = cudaMalloc(&info, sizeof(int));
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    info.init(1);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+
+    //errCUDA = cudaMalloc(&buffer, sizeof(double)*bufferSize);
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    buffer.init(bufferSize);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    //errCUDA = cudaMalloc(&d_A, sizeof(double)*lda*n);
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    d_A.init(lda*n);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    //errCUDA = cudaMalloc(&ipiv, sizeof(int)*n);
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    ipiv.init(n);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
     // prepare a copy of A because getrf will overwrite A with L
-    errCUDA = cudaMemcpy(d_A, Acopy, sizeof(double)*lda*n, cudaMemcpyDeviceToDevice);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    errCUDA = cudaMemset(info, 0, sizeof(int));
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    errCUDA = cudaMemcpy(d_A.data, Acopy, sizeof(double)*lda*n, cudaMemcpyDeviceToDevice);
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-    checkCudaErrors(cusolverDnDgetrf(handle, n, n, d_A, lda, buffer, ipiv, info));
-    errCUDA = cudaMemcpy(&h_info, info, sizeof(int), cudaMemcpyDeviceToHost);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    errCUDA = cudaMemset(info.data, 0, sizeof(int));
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+
+    checkCudaErrors(cusolverDnDgetrf(handle, n, n, d_A.data, lda, buffer.data, ipiv.data, info.data));
+    //errCUDA = cudaMemcpy(&h_info, info, sizeof(int), cudaMemcpyDeviceToHost);
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    errCUDA = cudaMemcpy(&h_info, info.data, sizeof(int), cudaMemcpyDeviceToHost);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
 
     if ( 0 != h_info ){
         fprintf(stderr, "Error: linearSolverLU failed\n");
     }
 
     errCUDA = cudaMemcpy(x, b, sizeof(double)*n, cudaMemcpyDeviceToDevice);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    checkCudaErrors(cusolverDnDgetrs(handle, CUBLAS_OP_N, n, 1, d_A, lda, ipiv, x, n, info));
-    errCUDA = cudaDeviceSynchronize();
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-    	errCUDA = cudaFree(info  ); info = 0;
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaFree(buffer); buffer = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaFree(d_A); d_A = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaFree(ipiv); ipiv = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    checkCudaErrors(cusolverDnDgetrs(handle, CUBLAS_OP_N, n, 1, d_A.data, lda, ipiv.data, x, n, info.data));
+    errCUDA = cudaDeviceSynchronize();
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+
+    	//errCUDA = cudaFree(info  ); info = 0;
+    	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    info.dispose();
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+
+    	//errCUDA = cudaFree(buffer); buffer = 0;
+		//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    buffer.dispose();
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	//errCUDA = cudaFree(d_A); d_A = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    d_A.dispose();
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    //errCUDA = cudaFree(ipiv); ipiv = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    ipiv.dispose();
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
     return 0;
 }
@@ -621,29 +931,56 @@ int CCUDA_AX_B_SolverWrapper::linearSolverQR(
 
     checkCudaErrors(cusolverDnDgeqrf_bufferSize(handle, n, n, (double*)Acopy, lda, &bufferSize));
 
-    errCUDA = cudaMalloc(&info, sizeof(int));
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    errCUDA = cudaMalloc(&buffer, sizeof(double)*bufferSize);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    errCUDA = cudaMalloc(&d_A, sizeof(double)*lda*n);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    errCUDA = cudaMalloc ((void**)&tau, sizeof(double)*n);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    //errCUDA = cudaMalloc(&info, sizeof(int));
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-    errCUDA = cudaMemcpy(d_A, Acopy, sizeof(double)*lda*n, cudaMemcpyDeviceToDevice);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    errCUDA = cudaMemset(info, 0, sizeof(int));
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-    checkCudaErrors(cusolverDnDgeqrf(handle, n, n, d_A, lda, tau, buffer, bufferSize, info));
+    info.init(1);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-    errCUDA = cudaMemcpy(&h_info, info, sizeof(int), cudaMemcpyDeviceToHost);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    	//errCUDA = cudaMalloc(&buffer, sizeof(double)*bufferSize);
+    	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    buffer.init(bufferSize);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+
+    //errCUDA = cudaMalloc(&d_A, sizeof(double)*lda*n);
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	d_A.init(lda*n);
+	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    //errCUDA = cudaMalloc ((void**)&tau, sizeof(double)*n);
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	tau.init(n);
+	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    errCUDA = cudaMemcpy(d_A.data, Acopy, sizeof(double)*lda*n, cudaMemcpyDeviceToDevice);
+    	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+
+    //errCUDA = cudaMemset(info, 0, sizeof(int));
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    cudaMemset(info.data, 0, sizeof(int));
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+
+    checkCudaErrors(cusolverDnDgeqrf(handle, n, n, d_A.data, lda, tau.data, buffer.data, bufferSize, info.data));
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    errCUDA = cudaMemcpy(&h_info, info.data, sizeof(int), cudaMemcpyDeviceToHost);
+    	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
     if ( 0 != h_info ){
         fprintf(stderr, "Error: linearSolverQR failed\n");
     }
 
     errCUDA = cudaMemcpy(x, b, sizeof(double)*n, cudaMemcpyDeviceToDevice);
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
     // compute Q^T*b
     checkCudaErrors(cusolverDnDormqr(
         handle,
@@ -652,14 +989,14 @@ int CCUDA_AX_B_SolverWrapper::linearSolverQR(
         n,
         1,
         n,
-        d_A,
+        d_A.data,
         lda,
-        tau,
+        tau.data,
         x,
         n,
-        buffer,
+        buffer.data,
         bufferSize,
-        info));
+        info.data));
 
     // x = R \ Q^T*b
     checkCudaErrors(cublasDtrsm(
@@ -671,23 +1008,40 @@ int CCUDA_AX_B_SolverWrapper::linearSolverQR(
          n,
          1,
          &one,
-         d_A,
+         d_A.data,
          lda,
          x,
          n));
     errCUDA = cudaDeviceSynchronize();
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    	//throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
     if (cublasHandle) { checkCudaErrors(cublasDestroy(cublasHandle)); }
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
-    errCUDA = cudaFree(info  ); info = 0;
-    	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaFree(buffer); buffer = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaFree(d_A); d_A = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
-	errCUDA = cudaFree(tau); tau = 0;
-		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    //errCUDA = cudaFree(info  ); info = 0;
+    //	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+    info.dispose();
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
 
+
+   // errCUDA = cudaFree(buffer); buffer = 0;
+//		throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    buffer.dispose();
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	//errCUDA = cudaFree(d_A); d_A = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+    d_A.dispose();
+    throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	//errCUDA = cudaFree(tau); tau = 0;
+	//	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
+
+	tau.dispose();
+	throw_on_cuda_error(errCUDA, __FILE__, __LINE__);
     return 0;
 }
 
