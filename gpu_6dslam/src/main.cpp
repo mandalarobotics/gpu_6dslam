@@ -326,8 +326,10 @@ int main(int argc, char *argv[])
     private_node.param<float>("findBestYaw_search_radius", slam->findBestYaw_search_radius,  0.3f);
     private_node.param<float>("findBestYaw_max_number_considered_in_INNER_bucket", slam->findBestYaw_max_number_considered_in_INNER_bucket, 50.0f);
     private_node.param<float>("findBestYaw_max_number_considered_in_OUTER_bucket", slam->findBestYaw_max_number_considered_in_OUTER_bucket,  50.0f);
+    private_node.param<bool>("use4DOF", slam->use4DOF,  true);
 
     private_node.param<int>("cudaDevice",slam->cudaDevice,  0);
+
 
 
 
@@ -374,6 +376,7 @@ int main(int argc, char *argv[])
     ROS_INFO_STREAM("findBestYaw_search_radius : " << slam->findBestYaw_search_radius );
     ROS_INFO_STREAM("findBestYaw_max_number_considered_in_INNER_bucket : " << slam->findBestYaw_max_number_considered_in_INNER_bucket );
     ROS_INFO_STREAM("findBestYaw_max_number_considered_in_OUTER_bucket : " << slam->findBestYaw_max_number_considered_in_OUTER_bucket );
+    ROS_INFO_STREAM("use4DOF : " << slam->use4DOF );
     ROS_INFO_STREAM("cudaDevice : " << slam->cudaDevice );
 
 
@@ -442,7 +445,7 @@ int main(int argc, char *argv[])
 
 void callbackPointcloud2(const sensor_msgs::PointCloud2::ConstPtr& msg)
 {
-	std::cout << "callbackPointcloud2" << std::endl;
+	std::cout << "callbackPointcloud2 (registerSingleScan)" << std::endl;
 
 	tf::StampedTransform position_current;
 	try
